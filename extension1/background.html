@@ -1,0 +1,74 @@
+<html>
+<head>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-16826446-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = 'https://ssl.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</head>
+<body>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">//<![CDATA[
+
+var urls = new Array();//stores urls of all latest batch of new questions
+
+function newTab(tab){
+	var site = localStorage["site"];
+	if(site === undefined) site = "stackoverflow";//default to stackoverflow
+	//open default site or last batch of questions in new tabs
+	if(urls.length === 0) chrome.tabs.create({url: "www."+site+".com"});
+	else $.each(urls,function(k,v){chrome.tabs.create({url: v});});
+}
+
+chrome.browserAction.onClicked.addListener(newTab);
+
+$(document).ready(function(){
+  var viewed = new Array();//question ids already notified of
+  var questionID = 1;//current question id
+  var title = "";//current title
+	function getNewest(){
+		var tags = localStorage["tags"];//tags to search for
+		var site = localStorage["site"];
+		if(tags === undefined) tags = "";//no tags
+		if(site === undefined) site = "stackoverflow";//default to stackoverflow
+		//get 3 newest questions with these tags
+		$.getJSON("http://api."+site+".com/0.8/questions?key=ZpfMplIV7kKcbZEZP30M4g&sort=creation&pagesize=3&tagged=" + tags.replace(" ","%20"), function(data){
+			//for every question notify of all new ones
+			if(data === null){
+				return;//API call failed!
+			}
+			$.each(data["questions"],function(k,v){
+				questionID = v["question_id"]
+				if(viewed.indexOf(questionID) === -1){//if we haven't seen it yet
+					title = v["title"];
+					var notification = webkitNotifications.createNotification(
+						'icon2.png',  // icon url - can be relative
+						'New Question:',  // notification title
+						v["title"]  // notification body text
+					);
+					if(k === 0) urls = new Array();//if the first returned one is new reset the new tabs opened
+					urls.push("http://www."+site+".com/questions/" + questionID);
+					notification.show();
+					viewed.push(questionID);
+				}
+			});
+		});
+	}
+	getNewest();//run immediatly
+	setInterval(getNewest,61000);//run every minute or so
+	
+	
+});
+	
+ //]]>
+</script>
+</body>
+</html>
