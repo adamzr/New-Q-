@@ -24,38 +24,55 @@ function newTab(tab){
 	var site = localStorage["site"];
 	if(site === undefined) site = "stackoverflow";//default to stackoverflow
 	//open default site or last batch of questions in new tabs
-	if(urls.length === 0) chrome.tabs.create({url: "www."+site+".com"});
+	if(urls.length === 0) chrome.tabs.create({url: site+".com"});
 	else $.each(urls,function(k,v){chrome.tabs.create({url: v});});
 }
 
 chrome.browserAction.onClicked.addListener(newTab);
 
 $(document).ready(function(){
-  var viewed = new Array();//question ids already notified of
-  var questionID = 1;//current question id
-  var title = "";//current title
+  var viewed = new Array();//question ids already notified of; maintained between API calls
 	function getNewest(){
 		var tags = localStorage["tags"];//tags to search for
-		var site = localStorage["site"];
-		if(tags === undefined) tags = "";//no tags
+		var site = localStorage["site"];//which site (e.g. stackoverflow)
+		var anyTags = localStroage["anyTags"];//use any tags as opposed to all tags
+		
+		//set defaults
+		if(anyTags === undefined) anyTags = false;//default to require all tags
+		if(tags === undefined) tags = "";//default to no tags
 		if(site === undefined) site = "stackoverflow";//default to stackoverflow
+		
+		if(anyTags === true) tags = "";//if we're using any tags not all then don't include tags in 
+		
 		//get 3 newest questions with these tags
 		$.getJSON("http://api."+site+".com/0.8/questions?key=ZpfMplIV7kKcbZEZP30M4g&sort=creation&pagesize=3&tagged=" + tags.replace(" ","%20"), function(data){
 			//for every question notify of all new ones
 			if(data === null){
 				return;//API call failed!
 			}
-			$.each(data["questions"],function(k,v){
-				questionID = v["question_id"]
-				if(viewed.indexOf(questionID) === -1){//if we haven't seen it yet
-					title = v["title"];
+			$.each(data["questions"],function(k,v){//for each of the 0-3 questions
+				var hasDesiredTags = false;
+				if(!anyTags) hasDesiredTags = true;//API ensures that this is true
+				else {
+					$.each(v["tags"], function(k1,v1){//check all the tags in the question....
+						$.each(localStorage["tags"], function(k2,v2){//..against desired tags
+							if(v1 === v2){
+								hasDesiredTags = true;//found one!
+								return;//and that's good enough
+							}
+						});
+					});
+				}
+				
+				var questionID = v["question_id"]
+				if(viewed.indexOf(questionID) === -1 && hasDesiredTags){//if we haven't seen it yet and it has the right tags
 					var notification = webkitNotifications.createNotification(
 						'icon2.png',  // icon url - can be relative
-						'New Question:',  // notification title
+						'New Question on ' + site + ':',  // notification title
 						v["title"]  // notification body text
 					);
 					if(k === 0) urls = new Array();//if the first returned one is new reset the new tabs opened
-					urls.push("http://www."+site+".com/questions/" + questionID);
+					urls.push("http://"+site+".com/questions/" + questionID);
 					notification.show();
 					viewed.push(questionID);
 				}

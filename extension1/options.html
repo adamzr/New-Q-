@@ -1,5 +1,70 @@
-<html>
-<head><title>New Q! Options</title>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" /> 
+<title>New Q! Options</title>
+<link href='http://fonts.googleapis.com/css?family=Cantarell' rel='stylesheet' type='text/css'/>
+<link href='http://fonts.googleapis.com/css?family=Crimson+Text' rel='stylesheet' type='text/css'>
+<style type="text/css">
+h2 {font-family: 'Cantarell', arial, serif;}
+body { font-family: 'Crimson Text', arial, serif; margin:15px 175px;}
+</style>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">//<![CDATA[
+
+// Saves options to localStorage.
+function save_options() {
+  var input = document.getElementById("tags");
+  var tags = input.value;
+  localStorage["tags"] = tags;
+  
+  var select = document.getElementById("site");
+  var site = select.children[select.selectedIndex].value;
+  localStorage["site"] = site;
+  
+  if($("input[name='anyTags']:checked").value() === "true") localStorage["anyTags"] = true;
+  else localStorage["anyTags"] = false;
+
+  // Update status to let user know options were saved.
+  var status = document.getElementById("status");
+  status.innerHTML = "Options Saved.";
+  setTimeout(function() {
+    status.innerHTML = "";
+  }, 750);
+  
+}
+
+// Restores select box state to saved value from localStorage.
+function restore_options() {
+  var tags = localStorage["tags"];
+  if (!tags) {
+    tags = "";
+  }
+  var input = document.getElementById("tags");
+  input.value = tags
+  
+  var site = localStorage["site"];
+  if (!site) {
+    site = "stackoverflow";
+  }
+  var select = document.getElementById("site");
+  for (var i = 0; i < select.children.length; i++) {
+    var child = select.children[i];
+    if (child.value == site) {
+      child.selected = "true";
+      break;
+    }
+  }
+  
+  var anyTags = localStorage["anyTags"];
+  if(anyTags === undefined){
+	anyTags = "false";
+  }
+  $("input[name='anyTags'][value='"+ String(anyTags) +"']").attr('selected','selected');
+}
+
+//]]></script>
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
@@ -14,56 +79,13 @@
 
 </script>
 </head>
-<script type="text/javascript">
 
-// Saves options to localStorage.
-function save_options() {
-  var input = document.getElementById("tags");
-  var tags = input.value;
-  localStorage["tags"] = tags;
-  
-  var select = document.getElementById("site");
-  var site = select.children[select.selectedIndex].value;
-  localStorage["site"] = site;
-
-  // Update status to let user know options were saved.
-  var status = document.getElementById("status");
-  status.innerHTML = "Options Saved.";
-  setTimeout(function() {
-    status.innerHTML = "";
-  }, 750);
-}
-
-// Restores select box state to saved value from localStorage.
-function restore_options() {
-  var tags = localStorage["tags"];
-  if (!tags) {
-    return;
-  }
-  var input = document.getElementById("tags");
-  input.value = tags
-  
-  var site = localStorage["site"];
-  if (!site) {
-    return;
-  }
-  var select = document.getElementById("site");
-  for (var i = 0; i < select.children.length; i++) {
-    var child = select.children[i];
-    if (child.value == site) {
-      child.selected = "true";
-      break;
-    }
-  }
-}
-
-</script>
 
 <body onload="restore_options()">
-<h1 style="text-align: center;">New Q! Options</h1>
+<h1 style="text-align: center; font-family: 'Cantarell', arial, serif; ">New Q! Options</h1>
 <h2>Instructions</h2>
 <p>
-New Q! will create desktop notification whenever there is a new question wit your desired tags.
+New Q! will create desktop notification whenever there is a new question with your desired tags.
 When you see a notification of a question ou'd like to look at click the New Q! button in Chrome.
 Each of the latest batch of new questions will open up in its own tab.
 </p>
@@ -73,16 +95,22 @@ Each of the latest batch of new questions will open up in its own tab.
 <label>Tags:
 <input id="tags"></input></label>
 
+<p>Should the questions have ANY one of the tags above or must it have ALL of them?</p>
+<label><input type="radio" name="anyTags" value="true"></input>ANY</label>
+<label><input type="radio" name="anyTags" value="false"></input>ALL</label>
+
 <p>Which site are you interested in?</p>
 <label>Site:
 <select id="site">
-<option>stackoverflow</option>
-<option>superuser</option>
-<option>serverfault</option>
+<option value="stackoverflow">stackoverflow</option>
+<option value="superuser">superuser</option>
+<option value="serverfault">serverfault</option>
+<option value="stackapps">stackapps</option>
+<option value="meta.stackoverflow">meta.stackoverflow</option>
 </select>
 </label>
 
-<br>
+<br />
 <button onclick="save_options()">Save</button>
 </body>
 </html>
