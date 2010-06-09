@@ -24,7 +24,7 @@ function newTab(tab){
 	var site = localStorage["site"];
 	if(site === undefined) site = "stackoverflow";//default to stackoverflow
 	//open default site or last batch of questions in new tabs
-	if(urls.length === 0) chrome.tabs.create({url: site+".com"});
+	if(urls.length === 0) chrome.tabs.create({url: 'http://'+site+".com"});
 	else $.each(urls,function(k,v){chrome.tabs.create({url: v});});
 }
 
@@ -35,17 +35,23 @@ $(document).ready(function(){
 	function getNewest(){
 		var tags = localStorage["tags"];//tags to search for
 		var site = localStorage["site"];//which site (e.g. stackoverflow)
-		var anyTags = localStroage["anyTags"];//use any tags as opposed to all tags
+		var anyTags = localStorage["anyTags"];//use any tags as opposed to all tags
 		
 		//set defaults
 		if(anyTags === undefined) anyTags = false;//default to require all tags
 		if(tags === undefined) tags = "";//default to no tags
 		if(site === undefined) site = "stackoverflow";//default to stackoverflow
 		
-		if(anyTags === true) tags = "";//if we're using any tags not all then don't include tags in 
+		(anyTags === "true") ? anyTags = true: anyTags = false;
+		
+		var pageSize = 3;//how many questions to get from server
+		if(anyTags === true){
+			tags = "";//if we're using any tags not all then don't include tags in
+			pageSize = 7;//assume a new question gets asked at a peak rate of 1 per 10 seconds and we need to search through all of them for our tags 
+		}
 		
 		//get 3 newest questions with these tags
-		$.getJSON("http://api."+site+".com/0.8/questions?key=ZpfMplIV7kKcbZEZP30M4g&sort=creation&pagesize=3&tagged=" + tags.replace(" ","%20"), function(data){
+		$.getJSON("http://api."+site+".com/0.8/questions?key=ZpfMplIV7kKcbZEZP30M4g&sort=creation&pagesize=" + pageSize + "&tagged=" + tags.replace(" ","%20"), function(data){
 			//for every question notify of all new ones
 			if(data === null){
 				return;//API call failed!
@@ -55,7 +61,9 @@ $(document).ready(function(){
 				if(!anyTags) hasDesiredTags = true;//API ensures that this is true
 				else {
 					$.each(v["tags"], function(k1,v1){//check all the tags in the question....
-						$.each(localStorage["tags"], function(k2,v2){//..against desired tags
+						var tagArray = new Array();
+						(localStorage["tags"] !== undefined) ? tagArray = localStorage["tags"].split(" ") : tagArray = new Array();
+						$.each(tagArray, function(k2,v2){//..against desired tags
 							if(v1 === v2){
 								hasDesiredTags = true;//found one!
 								return;//and that's good enough

@@ -23,8 +23,10 @@ function save_options() {
   var site = select.children[select.selectedIndex].value;
   localStorage["site"] = site;
   
-  if($("input[name='anyTags']:checked").value() === "true") localStorage["anyTags"] = true;
-  else localStorage["anyTags"] = false;
+  $("input[name='anyTags']:checked").each(function(index){
+	if($(this).attr("value") === "true") localStorage["anyTags"] = true;
+	else localStorage["anyTags"] = false;
+  });
 
   // Update status to let user know options were saved.
   var status = document.getElementById("status");
@@ -61,7 +63,7 @@ function restore_options() {
   if(anyTags === undefined){
 	anyTags = "false";
   }
-  $("input[name='anyTags'][value='"+ String(anyTags) +"']").attr('selected','selected');
+  $("input[name='anyTags'][value='"+ String(anyTags) +"']").attr('checked','checked');
 }
 
 //]]></script>

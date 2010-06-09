@@ -14,6 +14,7 @@
   },
   "permissions": [
     "http://*.stackoverflow.com/",
+	"http://*.stackapps.com/",
 	"http://*.superuser.com/",
 	"http://*.serverfault.com/",
 	"tabs",
