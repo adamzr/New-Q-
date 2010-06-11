@@ -72,8 +72,21 @@ $(document).ready(function(){
 					});
 				}
 				
+				var hasIgnoredTags = false;
+				
+				$.each(v["tags"], function(k1,v1){//check all the tags in the question....
+					var ignoredTagArray = new Array();
+					(localStorage["ignoredTags"] !== undefined) ? ignoredTagArray = localStorage["ignoredTags"].split(" ") : ignoredTagArray = new Array();
+					$.each(ignoredTagArray, function(k2,v2){//..against desired tags
+						if(v1 === v2){
+							hasIgnoredTags = true;//found one!
+							return;//and that's good enough
+						}
+					});
+				});
+				
 				var questionID = v["question_id"]
-				if(viewed.indexOf(questionID) === -1 && hasDesiredTags){//if we haven't seen it yet and it has the right tags
+				if(viewed.indexOf(questionID) === -1 && hasDesiredTags && !hasIgnoredTags){//if we haven't seen it yet and it has the right tags and none of the ignored ones
 					var notification = webkitNotifications.createNotification(
 						'icon2.png',  // icon url - can be relative
 						'New Question on ' + site + ':',  // notification title

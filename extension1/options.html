@@ -19,6 +19,10 @@ function save_options() {
   var tags = input.value;
   localStorage["tags"] = tags;
   
+  var input2 = document.getElementById("ignoredTags");
+  var ignoredTags = input2.value;
+  localStorage["ignoredTags"] = ignoredTags;
+  
   var select = document.getElementById("site");
   var site = select.children[select.selectedIndex].value;
   localStorage["site"] = site;
@@ -45,6 +49,13 @@ function restore_options() {
   }
   var input = document.getElementById("tags");
   input.value = tags
+  
+  var ignoredTags = localStorage["ignoredTags"];
+  if (!ignoredTags) {
+    ignoredTags = "";
+  }
+  var input2 = document.getElementById("ignoredTags");
+  input2.value = ignoredTags;
   
   var site = localStorage["site"];
   if (!site) {
@@ -95,11 +106,15 @@ Each of the latest batch of new questions will open up in its own tab.
 <div id="status" style="color: green;"></div>
 <p>Enter the tags you are interested in seperated by spaces</p>
 <label>Tags:
-<input id="tags"></input></label>
+<input type="text" id="tags"></input></label>
 
 <p>Should the questions have ANY one of the tags above or must it have ALL of them?</p>
 <label><input type="radio" name="anyTags" value="true"></input>ANY</label>
 <label><input type="radio" name="anyTags" value="false"></input>ALL</label>
+
+<p>If you would like questions with certain tags to be ignored enter them below separated by spaces:</p>
+<label>Ignored Tags:
+<input id="ignoredTags" type="text"></input></label>
 
 <p>Which site are you interested in?</p>
 <label>Site:
