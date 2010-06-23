@@ -17,6 +17,8 @@
 	"http://*.stackapps.com/",
 	"http://*.superuser.com/",
 	"http://*.serverfault.com/",
+	"http://www.rgraph.net/",
+	"http://ajax.googleapis.com/",
 	"tabs",
 	"notifications"
   ]
