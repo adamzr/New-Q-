@@ -19,93 +19,107 @@
 <script type="text/javascript">//<![CDATA[
 
 var urls = new Array();//stores urls of all latest batch of new questions
+var API_VERSION = "1.0";//as of now this needs to be in options.html too
 
 //Opens a new tab to and for each url in the global url array
 function newTab(tab){
-	var site = localStorage["site"];
-	if(site === undefined) site = "stackoverflow";//default to stackoverflow
-	//open default site or last batch of questions in new tabs
-	if(urls.length === 0) chrome.tabs.create({url: 'http://'+site+".com"});
-	else $.each(urls,function(k,v){chrome.tabs.create({url: v});});
+    var site = JSON.parse(localStorage["site"]);
+    if(site === undefined) site = {"site_url" : "http://stackoverflow.com"};//default to stackoverflow
+    //open default site or last batch of questions in new tabs
+    if(urls.length === 0) chrome.tabs.create({url: site["site_url"]});
+    else $.each(urls,function(k,v){chrome.tabs.create({url: v});});
 }
 
 chrome.browserAction.onClicked.addListener(newTab);//when you click on the icon next to the omnibar open tabs for all new questions
 
 $(document).ready(function(){
-	var viewed = new Array();//question ids already notified of; maintained between API calls
-	function getNewest(){
-		var tags = localStorage["tags"];//tags to search for
-		var site = localStorage["site"];//which site (e.g. stackoverflow)
-		var anyTags = localStorage["anyTags"];//use any tags as opposed to all tags
-		
-		//set defaults
-		if(anyTags === undefined) anyTags = false;//default to require all tags
-		if(tags === undefined) tags = "";//default to no tags
-		if(site === undefined) site = "stackoverflow";//default to stackoverflow
-		
-		(anyTags === "true") ? anyTags = true: anyTags = false;//localStorage stores strings so we need to convert
-		
-		var pageSize = 3;//how many questions to get from server
-		if(anyTags === true){
-			tags = "";//if we're using any tags not all then don't include tags in the ajax query
-			pageSize = 7;//assume a new question gets asked at a peak rate of 1 per 10 seconds and we need to search through all of them for our tags 
-		}
-		
-		//get the newest questions with these tags, note that tags should be seperated by %20 in the query
-		$.getJSON("http://api."+site+".com/0.8/questions?key=ZpfMplIV7kKcbZEZP30M4g&sort=creation&pagesize=" + pageSize + "&tagged=" + tags.replace(" ","%20"), function(data){
-			if(data === null){
-				return;//API call failed!
-			}
-			//for every question found notify me only of all the desired new ones
-			$.each(data["questions"],function(k,v){//for each of the questions returned
-				var hasDesiredTags = false;
-				
-				if(!anyTags) hasDesiredTags = true;//if we want questions that have ALL the desired tags, we put those tags in the query so the API will ensure they're all present
-				else {
-					$.each(v["tags"], function(k1,v1){//check all the tags in the question....
-						var tagArray = new Array();
-						(localStorage["tags"] !== undefined) ? tagArray = localStorage["tags"].split(" ") : tagArray = new Array();
-						$.each(tagArray, function(k2,v2){//..against desired tags
-							if(v1 === v2){
-								hasDesiredTags = true;//found one!
-								return;//and that's good enough
-							}
-						});
-					});
-				}
-				
-				var hasIgnoredTags = false;
-				
-				$.each(v["tags"], function(k1,v1){//check all the tags in the question....
-					var ignoredTagArray = new Array();
-					(localStorage["ignoredTags"] !== undefined) ? ignoredTagArray = localStorage["ignoredTags"].split(" ") : ignoredTagArray = new Array();
-					$.each(ignoredTagArray, function(k2,v2){//..against ignored tags
-						if(v1 === v2){
-							hasIgnoredTags = true;//found one!
-							return;//and that's good enough
-						}
-					});
-				});
-				
-				var questionID = v["question_id"]
-				if(viewed.indexOf(questionID) === -1 && hasDesiredTags && !hasIgnoredTags){//if we haven't seen it yet and it has the right tags and none of the ignored ones
-					//we'll pass the information needed to the html notification in the query string
-					var notification = webkitNotifications.createHTMLNotification("notification.html?title=" + v["title"] + "&url=" + "http://"+site+".com/questions/" + questionID + "&vote_count=" + String(Number(v["up_vote_count"]) + Number(v["down_vote_count"])) + "&answer_count=" + v["answer_count"] + "&view_count=" + v["view_count"]);
-					if(k === 0) urls = new Array();//if the first returned question (i.e. key in question array is 0) is new to us then reset the list of new tabs to beopened
-					urls.push("http://"+site+".com/questions/" + questionID);
-					notification.show();
-					viewed.push(questionID);//add to to the list of questions we've already been notified of
-				}
-			});
-		});
-	}
-	
-	getNewest();//run immediatly
-	setInterval(getNewest,61000);//run every minute or so
-	
-	
+    var viewed = new Array();//question ids already notified of; maintained between API calls
+    function getNewest(){
+        var tags = localStorage["tags"];//tags to search for
+        var site = localStorage["site"];//which site (e.g. stackoverflow)
+        var anyTags = localStorage["anyTags"];//use any tags as opposed to all tags
+        
+        //set defaults
+        if(anyTags === undefined) anyTags = false;//default to require all tags
+        if(tags === undefined) tags = "";//default to no tags
+        if(site === undefined) site = {
+          "name": "Stack Overflow",
+          "logo_url": "http://sstatic.net/so/img/logo.png",
+          "api_endpoint": "http://api.stackoverflow.com",
+          "site_url": "http://stackoverflow.com",
+          "description": "Q&A for professional and enthusiast programmers",
+          "icon_url": "http://sstatic.net/so/apple-touch-icon.png",
+          "state": "normal",
+          "styling": {
+            "link_color": "#0077CC",
+            "tag_foreground_color": "#3E6D8E",
+            "tag_background_color": "#E0EAF1"
+            }
+        };//default to stackoverflow
+        else{ site = JSON.parse(site);}
+        (anyTags === "true") ? anyTags = true: anyTags = false;//localStorage stores strings so we need to convert
+        
+        var pageSize = 3;//how many questions to get from server
+        if(anyTags === true){
+            tags = "";//if we're using any tags not all then don't include tags in the ajax query
+            pageSize = 7;//assume a new question gets asked at a peak rate of 1 per 10 seconds and we need to search through all of them for our tags 
+        }
+        
+        //get the newest questions with these tags, note that tags should be seperated by %20 in the query
+        $.getJSON(site["api_endpoint"] + "/" +API_VERSION +"/questions?key=ZpfMplIV7kKcbZEZP30M4g&sort=creation&pagesize=" + pageSize + "&tagged=" + tags.replace(" ","%20"), function(data){
+            if(data === null){
+                return;//API call failed!
+            }
+            //for every question found notify me only of all the desired new ones
+            $.each(data["questions"],function(k,v){//for each of the questions returned
+                var hasDesiredTags = false;
+                
+                if(!anyTags) hasDesiredTags = true;//if we want questions that have ALL the desired tags, we put those tags in the query so the API will ensure they're all present
+                else {
+                    $.each(v["tags"], function(k1,v1){//check all the tags in the question....
+                        var tagArray = new Array();
+                        (localStorage["tags"] !== undefined) ? tagArray = localStorage["tags"].split(" ") : tagArray = new Array();
+                        $.each(tagArray, function(k2,v2){//..against desired tags
+                            if(v1 === v2){
+                                hasDesiredTags = true;//found one!
+                                return;//and that's good enough
+                            }
+                        });
+                    });
+                }
+                
+                var hasIgnoredTags = false;
+                
+                $.each(v["tags"], function(k1,v1){//check all the tags in the question....
+                    var ignoredTagArray = new Array();
+                    (localStorage["ignoredTags"] !== undefined) ? ignoredTagArray = localStorage["ignoredTags"].split(" ") : ignoredTagArray = new Array();
+                    $.each(ignoredTagArray, function(k2,v2){//..against ignored tags
+                        if(v1 === v2){
+                            hasIgnoredTags = true;//found one!
+                            return;//and that's good enough
+                        }
+                    });
+                });
+                
+                var questionID = v["question_id"]
+                if(viewed.indexOf(questionID) === -1 && hasDesiredTags && !hasIgnoredTags){//if we haven't seen it yet and it has the right tags and none of the ignored ones
+                    //we'll pass the information needed to the html notification in the query string
+                    var notification = webkitNotifications.createHTMLNotification("notification.html?title=" + v["title"].replace("&","and") + "&url=" + site["site_url"] +"/questions/" + questionID + "&vote_count=" + String(Number(v["up_vote_count"]) + Number(v["down_vote_count"])) + "&answer_count=" + v["answer_count"] + "&view_count=" + v["view_count"]);
+                    if(k === 0) urls = new Array();//if the first returned question (i.e. key in question array is 0) is new to us then reset the list of new tabs to beopened
+                    urls.push(site["site_url"] +"/questions/" + questionID);
+                    notification.show();
+                    viewed.push(questionID);//add to to the list of questions we've already been notified of
+                }
+            });
+        });
+    }
+    
+    getNewest();//run immediatly
+    setInterval(getNewest,61000);//run every minute or so
+    
+    
 });
-	
+    
  //]]>
 </script>
 </body>

@@ -1,11 +1,11 @@
 {
   "name": "New Q!",
-  "version": "0.3",
+  "version": "0.6",
   "description": "Notifies you of new interesting questions on your favorite StackExchange site (e.g. StackOverflow.com).",
   "background_page": "background.html",
   "options_page": "options.html",
   "icons": { "16": "icon16.png",
-			"32": "icon16.png",
+            "32": "icon16.png",
             "48": "icon48.png",
             "128": "icon128.png" },
   "minimum_chrome_version" : "5.0.307.1",
@@ -14,12 +14,13 @@
   },
   "permissions": [
     "http://*.stackoverflow.com/",
-	"http://*.stackapps.com/",
-	"http://*.superuser.com/",
-	"http://*.serverfault.com/",
-	"http://www.rgraph.net/",
-	"http://ajax.googleapis.com/",
-	"tabs",
-	"notifications"
+    "http://*.stackapps.com/",
+    "http://*.superuser.com/",
+    "http://*.serverfault.com/",
+    "http://*.stackexchange.com/",
+    "http://*.googleapis.com/",
+    "http://*.stackauth.com/",
+    "tabs",
+    "notifications"
   ]
 }
