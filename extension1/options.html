@@ -23,6 +23,10 @@ function save_options() {
   var ignoredTags = input2.value;
   localStorage["ignoredTags"] = ignoredTags;
   
+  var input3 = document.getElementById("userID");
+  var userID = input3.value;
+  localStorage["userID"] = userID;
+  
   var select = document.getElementById("site");
   var site = select.children[select.selectedIndex].value;
   localStorage["site"] = site;
@@ -56,6 +60,13 @@ function restore_options() {
   }
   var input2 = document.getElementById("ignoredTags");
   input2.value = ignoredTags;
+  
+  var userID = localStorage["userID"];
+  if(!userID){
+    userID = "";
+  }
+  var input3 = document.getElementById("userID");
+  input3.value = userID;
   
   var site = localStorage["site"];
   if (!site) {
@@ -129,6 +140,11 @@ Each of the latest batch of new questions will open up in its own tab.
 <select id="site">
 <!-- Populated by jQuery-->
 </select>
+</label>
+
+<p>To be notified of new comments directed at you enter your user id:</p>
+<label>User ID:
+<input type="text" id="userID"></input>
 </label>
 
 <br />
