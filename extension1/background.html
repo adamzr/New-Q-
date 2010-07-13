@@ -122,8 +122,11 @@ $(document).ready(function(){
         if(userID !== undefined){
             $.getJSON(site["api_endpoint"] + "/" +API_VERSION + "/users/" + userID + "/mentioned",{"key" : "ZpfMplIV7kKcbZEZP30M4g" , "pagesize" : "5"},function(data){
                 $.each(data["comments"], function(i, comment){
-                    if(viewedComments.indexOf(comment["comment_id"]) === -1){
+                    var commentID = comment["comment_id"];
+                    if(viewedComments.indexOf(commentID) === -1){
                         var notification = webkitNotifications.createHTMLNotification("comment_notification.html?sender=" + escape(comment["owner"]["display_name"]) + "&url=" + site["site_url"] +"/questions/" + comment["post_id"] + "&body=" + escape(comment["body"]));
+                        notification.show();
+                        viewedComments.push(commentID);
                     }
                 });
             });
