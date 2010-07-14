@@ -1,6 +1,6 @@
 {
   "name": "New Q!",
-  "version": "0.6",
+  "version": "0.7",
   "description": "Notifies you of new interesting questions on your favorite StackExchange site (e.g. StackOverflow.com).",
   "background_page": "background.html",
   "options_page": "options.html",
