@@ -81,10 +81,10 @@ $(document).ready(function(){
         (anyTags === "true") ? anyTags = true: anyTags = false;//localStorage stores strings so we need to convert
     }
     
-    function getNewest(){
+    function getNewest(maxNotifications){
         loadOptions();
         
-        var pageSize = 3;//how many questions to get from server
+        var pageSize = 8;//how many questions to get from server
         var apiQueryPath = "questions";//which api method to use
         if(anyTags){ 
             apiQueryPath = "search";//See http://stackapps.com/questions/1024/and-searching-for-tags
@@ -95,6 +95,9 @@ $(document).ready(function(){
             if(data === null){
                 return;//API call failed!
             }
+            
+            var notificationsShown = 0;
+            
             //for every question found notify me only of all the desired new ones
             $.each(data["questions"],function(k,v){//for each of the questions returned
                 
@@ -112,13 +115,15 @@ $(document).ready(function(){
                     });
                 });
                 
+                
                 var questionID = v["question_id"]
                 if(viewedQuestions.indexOf(questionID) === -1 && !hasIgnoredTags){//if we haven't seen it yet and it has the right tags and none of the ignored ones
                     //we'll pass the information needed to the html notification in the query string
                     var notification = webkitNotifications.createHTMLNotification("notification.html?title=" + escape(v["title"].replace("&","and")) + "&url=" + escape(site["site_url"]) +"/questions/" + questionID + "&vote_count=" + String(Number(v["up_vote_count"]) + Number(v["down_vote_count"])) + "&answer_count=" + v["answer_count"] + "&view_count=" + v["view_count"]);
                     if(k === 0) urls = new Array();//if the first returned question (i.e. key in question array is 0) is new to us then reset the list of new tabs to beopened
                     urls.push(site["site_url"] +"/questions/" + questionID);
-                    notification.show();
+                    if(notificationsShown <= maxNotifications) notification.show();
+                    notificationsShown += 1;
                     viewedQuestions.push(questionID);//add to to the list of questions we've already been notified of
                     pausecomp(1500);//attempt to solve Chrome crashing bug by waiting a bit
                 }
@@ -128,16 +133,19 @@ $(document).ready(function(){
         
     }
     
-    function getNewestComments(){
+    function getNewestComments(maxNotifications){
         loadOptions();
-        //get most recent 3 comments made in last minute to the userID specified in options. More than 3 can get too many notifications and crash Chrome
+        //get most recent comments made in last minute to the userID specified in options. More than 3 can get too many notifications and crash Chrome
         if(userID !== undefined){
-            $.getJSON(site["api_endpoint"] + "/" +API_VERSION + "/users/" + userID + "/mentioned",{"key" : "ZpfMplIV7kKcbZEZP30M4g" , "pagesize" : "3"},function(data){
+            $.getJSON(site["api_endpoint"] + "/" +API_VERSION + "/users/" + userID + "/mentioned",{"key" : "ZpfMplIV7kKcbZEZP30M4g" , "pagesize" : "8"},function(data){
+                var notificationsShown = 0;
                 $.each(data["comments"], function(i, comment){
+                    
                     var commentID = comment["comment_id"];
                     if(viewedComments.indexOf(commentID) === -1){
                         var notification = webkitNotifications.createHTMLNotification("comment_notification.html?sender=" + escape(comment["owner"]["display_name"]) + "&url=" + site["site_url"] +"/questions/" + comment["post_id"] + "&body=" + escape(comment["body"]));
-                        notification.show();
+                        if(notificationsShown <= maxNotifications) notification.show();
+                        notificationsShown += 1
                         viewedComments.push(commentID);
                         pausecomp(1500);//attempt to solve Chrome crashing bug by waiting a bit
                     }
@@ -146,11 +154,10 @@ $(document).ready(function(){
         }
     }
     
-    getNewest();//run immediatly
-    pausecomp(20000);//wait 20 seconds to prevent too many notifications from crashing Chrome
-    //getNewestComments();
-    setInterval(getNewest,61000);//run every minute or so
-    setInterval(getNewestComments,80000);//run every minute and 20 seconds to avoid running at the same time as questions finder
+    getNewest(1);//run immediatly
+    getNewestComments(1);
+    setInterval( function(){getNewest(3)},61000);//run every minute or so
+    setInterval( function(){getNewestComments(3)},80000);//run every minute and 20 seconds to avoid running at the same time as questions finder
     
 });
     
