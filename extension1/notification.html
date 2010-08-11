@@ -8,6 +8,7 @@
             body {
                 font-family: Arial;
                 font-size: 10pt;
+                overflow: hidden;
             }
             .stats {
                 background:none repeat scroll 0 0 #EEEEEE;
@@ -44,7 +45,7 @@
             
             .vote-count-post {
                 display:block;
-                font-size:165%;
+                font-size:160%;
             }
             
             .unanswered {
@@ -74,30 +75,63 @@
                 color:#999999;
                 padding-top:3px;
                 text-align:center;
-                font-size: 90%;
+                font-size: 85%;
+            }
+            
+            .post-tag {
+                background-color:#E0EAF1;
+                border-bottom:1px solid #3E6D8E;
+                border-right:1px solid #7F9FB6;
+                color:#3E6D8E;
+                font-size:90%;
+                line-height:2.4;
+                margin:2px 2px 2px 0;
+                padding:3px 4px;
+                text-decoration:none;
+                white-space:nowrap;
+            }
+            
+            .tags {
+                position: absolute;
+                bottom:0;
+                width:100%;
+                height:25px;   /* Height of the footer */
+                margin-left: 90px;
+                line-height:18px;
+                margin-bottom: 7px;
+            }
+            
+            #container {
+                height: 100%;
+                opacity: 1.0;
+                background: transparent;
+                z-index: 100;
             }
         </style> 
     </head> 
 <body onload="loadMe()"> 
-    
-    <div class="statscontainer">
-        <div class="statsarrow"></div>
-        <div class="stats">
-            <div class="vote">
-                <div class="votes">
-                    <span class="vote-count-post"><strong id="vote_count">0</strong></span>
-                    <div class="viewcount">votes</div>
+    <div id="container">
+        <div class="statscontainer">
+            <div class="statsarrow"></div>
+            <div class="stats">
+                <div class="vote">
+                    <div class="votes">
+                        <span class="vote-count-post"><strong id="vote_count">0</strong></span>
+                        <div class="viewcount">votes</div>
+                    </div>
+                </div>
+                <div id="status" class="status">
+                    <strong id="answer_count">0</strong>answers
                 </div>
             </div>
-            <div id="status" class="status">
-                <strong id="answer_count">0</strong>answers
-            </div>
+            <div class="views" title="views" id="view_count"></div>
         </div>
-        <div class="views" title="views" id="view_count"></div>
-    </div>
- 
+     
 
-    <strong><a href="http://stackoverflow.com/404" target="_blank" id="link">(Unknown Title)</a></strong>
+        <strong><a style="z-index: 105; position: relative;" href="http://stackoverflow.com/404" target="_blank" id="link" onclick="window.close(); return true;">(Unknown Title)</a></strong>
+        <div id="tags" class="tags"></div>
+    </div>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js" type="text/javascript"></script>
     <script type="text/javascript">
         /* Client-side access to querystring name=value pairs
             Version 1.3
@@ -165,6 +199,25 @@
             
             if(Number(qs.get("answer_count")) < 1) document.getElementById('status').className += " unanswered";
             else document.getElementById('status').className += " answered";
+            
+            tags = JSON.parse(unescape(qs.get("tags")));
+            for(var i = 0; i < tags.length; i++){
+                var tag = $("<a></a>");
+                tag.attr("class", "post-tag");
+                tag.attr("rel", "tag");
+                tag.text(tags[i]);
+                $('#tags').append(tag);
+            }
+            var img = $("<img></img>");
+            img.attr("src", unescape(qs.get("logo_url")));
+            img.css("position", "absolute");
+            img.css("top", "10px");
+            img.css("opacity", "0.1");
+            img.css("margin-left", "90px");
+            img.css("width", "60%");
+            img.css("height", "50%");
+            img.css("z-index", "1");
+            $('body').append(img);
         }
 
         </script>

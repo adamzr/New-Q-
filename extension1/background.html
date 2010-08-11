@@ -25,11 +25,18 @@ function pausecomp(millis)
 
     do { curDate = new Date(); } 
     while(curDate-date < millis);
-} 
+}
+
+String.prototype.startsWith = function(str){ return (this.match("^"+str)==str);}
 
 var urls = new Array();//stores urls of all latest batch of new questions
 
-var API_VERSION = "1.0";//as of now this needs to be in options.html too
+var API_VERSION = "1.0";
+function apiVersion(){ return API_VERSION;}
+var API_KEY = "ZpfMplIV7kKcbZEZP30M4g";
+function apiKey(){ return API_KEY;}
+var ITERATION_INTERVAL = 61000;
+var HOUR = 3600;
 
 //Opens a new tab to and for each url in the global url array
 function newTab(tab){
@@ -40,126 +47,159 @@ function newTab(tab){
     else $.each(urls,function(k,v){chrome.tabs.create({url: v});});
 }
 
+function addToViewedQuestions(historyItems){
+  console.log("Ran history check");
+  for(var i = 0; i < historyItems.length; ++i){
+    if(historyItems[i].url.startsWith(site["site_url"] +"/questions")
+        && $.inArray(historyItems[i].url.split("/")[4],viewedQuestions) === -1){
+        console.log("Adding: " + historyItems[i].url.split("/")[4]);
+        viewedQuestions.push("" + historyItems[i].url.split("/")[4]);
+    }
+  }
+}
 chrome.browserAction.onClicked.addListener(newTab);//when you click on the icon next to the omnibar open tabs for all new questions
 
-$(document).ready(function(){
-    var viewedQuestions = new Array();//question ids already notified of; maintained between API calls
-    var viewedComments = new Array();//holds comment ids you've already seen; maintained between API calls
+var viewedQuestions;//question ids already notified of; maintained between API calls
+var viewedComments = new Array();//holds comment ids you've already seen; maintained between API calls
+
+//options
+var tags = localStorage["tags"];//tags to search for
+var site = localStorage["site"];//which site (e.g. stackoverflow)
+var anyTags = localStorage["anyTags"];//use any tags as opposed to all tags
+var userID = localStorage["userID"];
+
+function loadOptions(){
+    tags = localStorage["tags"];//tags to search for
+    site = localStorage["site"];//which site (e.g. stackoverflow)
+    anyTags = localStorage["anyTags"];//use any tags as opposed to all tags
     
-    //options
-    var tags = localStorage["tags"];//tags to search for
-    var site = localStorage["site"];//which site (e.g. stackoverflow)
-    var anyTags = localStorage["anyTags"];//use any tags as opposed to all tags
-    var userID = localStorage["userID"];
+    userID = localStorage["userID"];
     
-    function loadOptions(){
-        tags = localStorage["tags"];//tags to search for
-        site = localStorage["site"];//which site (e.g. stackoverflow)
-        anyTags = localStorage["anyTags"];//use any tags as opposed to all tags
-        
-        userID = localStorage["userID"];
-        
-        //set defaults
-        if(anyTags === undefined) anyTags = false;//default to require all tags
-        if(tags === undefined) tags = "";//default to no tags
-        if(site === undefined) site = {
-          "name": "Stack Overflow",
-          "logo_url": "http://sstatic.net/so/img/logo.png",
-          "api_endpoint": "http://api.stackoverflow.com",
-          "site_url": "http://stackoverflow.com",
-          "description": "Q&A for professional and enthusiast programmers",
-          "icon_url": "http://sstatic.net/so/apple-touch-icon.png",
-          "state": "normal",
-          "styling": {
-            "link_color": "#0077CC",
-            "tag_foreground_color": "#3E6D8E",
-            "tag_background_color": "#E0EAF1"
-            }
-        };//default to stackoverflow
-        else{ site = JSON.parse(site);}
-        
-        (anyTags === "true") ? anyTags = true: anyTags = false;//localStorage stores strings so we need to convert
+    //set defaults
+    if(anyTags === undefined) anyTags = false;//default to require all tags
+    if(tags === undefined) tags = "";//default to no tags
+    if(site === undefined) site = {
+      "name": "Stack Overflow",
+      "logo_url": "http://sstatic.net/so/img/logo.png",
+      "api_endpoint": "http://api.stackoverflow.com",
+      "site_url": "http://stackoverflow.com",
+      "description": "Q&A for professional and enthusiast programmers",
+      "icon_url": "http://sstatic.net/so/apple-touch-icon.png",
+      "state": "normal",
+      "styling": {
+        "link_color": "#0077CC",
+        "tag_foreground_color": "#3E6D8E",
+        "tag_background_color": "#E0EAF1"
+        }
+    };//default to stackoverflow
+    else{ site = JSON.parse(site);}
+    
+    (anyTags === "true") ? anyTags = true: anyTags = false;//localStorage stores strings so we need to convert
+    
+    if(!viewedQuestions){//if this is a new session
+        viewedQuestions = localStorage["viewedQuestions"];//load from storage in string form
+        if(!viewedQuestions){//we've never run the extension before
+            viewedQuestions = new Array();//make a new place to keep question IDs we've been to
+            //load in question we've seen from history in the past couple days
+            chrome.history.search({"text": site["site_url"], "startTime" : new Date().getTime() - 259200000}, addToViewedQuestions);
+        }
+        else{
+            viewedQuestions = JSON.parse(viewedQuestions);//convert to array
+        }
     }
+    localStorage["viewedQuestions"] = JSON.stringify(viewedQuestions);//save changes
+}
+
+function getNewestQuestions(maxNotifications){
+    loadOptions();
     
-    function getNewest(maxNotifications){
-        loadOptions();
-        
-        var pageSize = 8;//how many questions to get from server
-        var apiQueryPath = "questions";//which api method to use
-        if(anyTags){ 
-            apiQueryPath = "search";//See http://stackapps.com/questions/1024/and-searching-for-tags
+    var pageSize = 8;//how many questions to get from server
+    var apiQueryPath = "questions";//which api method to use
+    if(anyTags && tags.length > 0){ 
+        apiQueryPath = "search";//See http://stackapps.com/questions/1024/and-searching-for-tags
+    }
+    var time = Math.round(((new Date()).getTime()-Date.UTC(1970,0,1))/1000);
+    var hourAgo = time - HOUR;
+    
+    chrome.history.search({"text": site["site_url"], "startTime" : new Date().getTime() - ITERATION_INTERVAL * 10}, addToViewedQuestions);
+    
+    //get the newest questions with these tags, note that tags should be seperated by %20 in the query
+    $.getJSON(site["api_endpoint"] + "/" +API_VERSION +"/" + apiQueryPath ,
+    {"key" : API_KEY,
+    "sort" : "creation",
+    "pagesize" : pageSize,
+    "fromdate" : hourAgo,
+    "tagged" : tags.split(' ').join(';')},
+    function(data){
+        if(data === null){
+            return;//API call failed!
         }
         
-        //get the newest questions with these tags, note that tags should be seperated by %20 in the query
-        $.getJSON(site["api_endpoint"] + "/" +API_VERSION +"/" + apiQueryPath +"?key=ZpfMplIV7kKcbZEZP30M4g&sort=creation&pagesize=" + pageSize + "&tagged=" + escape(tags.replace(" ",";")), function(data){
-            if(data === null){
-                return;//API call failed!
-            }
-            
-            var notificationsShown = 0;
-            
-            //for every question found notify me only of all the desired new ones
-            $.each(data["questions"],function(k,v){//for each of the questions returned
-                
-                
-                var hasIgnoredTags = false;
-                
-                $.each(v["tags"], function(k1,v1){//check all the tags in the question....
-                    var ignoredTagArray = new Array();
-                    (localStorage["ignoredTags"] !== undefined) ? ignoredTagArray = localStorage["ignoredTags"].split(" ") : ignoredTagArray = new Array();
-                    $.each(ignoredTagArray, function(k2,v2){//..against ignored tags
-                        if(v1 === v2){
-                            hasIgnoredTags = true;//found one!
-                            return;//and that's good enough
-                        }
-                    });
-                });
-                
-                
-                var questionID = v["question_id"]
-                if(viewedQuestions.indexOf(questionID) === -1 && !hasIgnoredTags){//if we haven't seen it yet and it has the right tags and none of the ignored ones
-                    //we'll pass the information needed to the html notification in the query string
-                    var notification = webkitNotifications.createHTMLNotification("notification.html?title=" + escape(v["title"].replace("&","and")) + "&url=" + escape(site["site_url"]) +"/questions/" + questionID + "&vote_count=" + String(Number(v["up_vote_count"]) + Number(v["down_vote_count"])) + "&answer_count=" + v["answer_count"] + "&view_count=" + v["view_count"]);
-                    if(k === 0) urls = new Array();//if the first returned question (i.e. key in question array is 0) is new to us then reset the list of new tabs to beopened
-                    urls.push(site["site_url"] +"/questions/" + questionID);
-                    if(notificationsShown <= maxNotifications) notification.show();
-                    notificationsShown += 1;
-                    viewedQuestions.push(questionID);//add to to the list of questions we've already been notified of
-                    pausecomp(1500);//attempt to solve Chrome crashing bug by waiting a bit
-                }
-            });
-        });//end of API call for new questions
+        var notificationsShown = 0;
         
-        
-    }
-    
-    function getNewestComments(maxNotifications){
-        loadOptions();
-        //get most recent comments made in last minute to the userID specified in options. More than 3 can get too many notifications and crash Chrome
-        if(userID !== undefined){
-            $.getJSON(site["api_endpoint"] + "/" +API_VERSION + "/users/" + userID + "/mentioned",{"key" : "ZpfMplIV7kKcbZEZP30M4g" , "pagesize" : "8"},function(data){
-                var notificationsShown = 0;
-                $.each(data["comments"], function(i, comment){
-                    
-                    var commentID = comment["comment_id"];
-                    if(viewedComments.indexOf(commentID) === -1){
-                        var notification = webkitNotifications.createHTMLNotification("comment_notification.html?sender=" + escape(comment["owner"]["display_name"]) + "&url=" + site["site_url"] +"/questions/" + comment["post_id"] + "&body=" + escape(comment["body"]));
-                        if(notificationsShown <= maxNotifications) notification.show();
-                        notificationsShown += 1
-                        viewedComments.push(commentID);
-                        pausecomp(1500);//attempt to solve Chrome crashing bug by waiting a bit
+        //for every question found notify me only of all the desired new ones
+        $.each(data["questions"],function(k,v){//for each of the questions returned
+            
+            
+            var hasIgnoredTags = false;
+            
+            $.each(v["tags"], function(k1,v1){//check all the tags in the question....
+                var ignoredTagArray = new Array();
+                (localStorage["ignoredTags"] !== undefined) ? ignoredTagArray = localStorage["ignoredTags"].split(" ") : ignoredTagArray = new Array();
+                $.each(ignoredTagArray, function(k2,v2){//..against ignored tags
+                    if(v1 === v2){
+                        hasIgnoredTags = true;//found one!
+                        return;//and that's good enough
                     }
                 });
             });
-        }
+            
+            
+            var questionID = v["question_id"]
+            
+            if($.inArray("" + questionID,viewedQuestions) === -1 && !hasIgnoredTags){//if we haven't seen it yet and it has the right tags and none of the ignored ones
+                //we'll pass the information needed to the html notification in the query string
+                var notification = webkitNotifications.createHTMLNotification("notification.html?title=" + escape(v["title"].replace("&","and")) + "&url=" + escape(site["site_url"]) +"/questions/" + questionID + "&vote_count=" + String(Number(v["up_vote_count"]) + Number(v["down_vote_count"])) + "&answer_count=" + v["answer_count"] + "&view_count=" + v["view_count"] + "&tags=" + escape(JSON.stringify(v.tags)) + "&logo_url=" + escape(site.logo_url));
+                if(k === 0) urls = new Array();//if the first returned question (i.e. key in question array is 0) is new to us then reset the list of new tabs to beopened
+                urls.push(site["site_url"] +"/questions/" + questionID);
+                if(notificationsShown < maxNotifications) notification.show();
+                notificationsShown += 1;
+                viewedQuestions.push( "" + questionID);//add to to the list of questions we've already been notified of
+                pausecomp(1500);//attempt to solve Chrome crashing bug by waiting a bit
+            }
+        });
+    });//end of API call for new questions
+    
+    
+}
+
+function getNewestComments(maxNotifications){
+    loadOptions();
+    //get most recent comments made in last minute to the userID specified in options. More than 3 can get too many notifications and crash Chrome
+    if(userID){
+        var time = Math.round(((new Date()).getTime()-Date.UTC(1970,0,1))/1000);
+        var hourAgo = time - HOUR;
+        $.getJSON(site["api_endpoint"] + "/" +API_VERSION + "/users/" + userID + "/mentioned",{"key" : API_KEY, "pagesize" : "8", "fromdate" : hourAgo},function(data){
+            var notificationsShown = 0;
+            $.each(data["comments"], function(i, comment){
+                
+                var commentID = comment["comment_id"];
+                if($.inArray(commentID, viewedComments) === -1){
+                    var notification = webkitNotifications.createHTMLNotification("comment_notification.html?sender=" + escape(comment["owner"]["display_name"]) + "&url=" + site["site_url"] +"/questions/" + comment["post_id"] + "&body=" + escape(comment["body"]));
+                    if(notificationsShown < maxNotifications) notification.show();
+                    notificationsShown += 1
+                    viewedComments.push(commentID);
+                    pausecomp(1500);//attempt to solve Chrome crashing bug by waiting a bit
+                }
+            });
+        });
     }
-    
-    getNewest(1);//run immediatly
-    getNewestComments(1);
-    setInterval( function(){getNewest(3)},61000);//run every minute or so
-    setInterval( function(){getNewestComments(3)},80000);//run every minute and 20 seconds to avoid running at the same time as questions finder
-    
-});
+}
+
+getNewestQuestions(1);//run immediatly
+getNewestComments(1);
+setInterval( function(){getNewestQuestions(3)},ITERATION_INTERVAL);//run every minute or so
+setInterval( function(){getNewestComments(3)},ITERATION_INTERVAL + 19000);//run every minute and 20 seconds to avoid running at the same time as questions finder
     
  //]]>
 </script>

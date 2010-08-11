@@ -1,6 +1,6 @@
 {
   "name": "New Q!",
-  "version": "0.7",
+  "version": "0.9",
   "description": "Notifies you of new interesting questions on your favorite StackExchange site (e.g. StackOverflow.com).",
   "background_page": "background.html",
   "options_page": "options.html",
@@ -21,6 +21,7 @@
     "http://*.googleapis.com/",
     "http://*.stackauth.com/",
     "tabs",
-    "notifications"
+    "notifications",
+    "history"
   ]
 }
