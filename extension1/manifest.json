@@ -10,7 +10,8 @@
             "128": "icon128.png" },
   "minimum_chrome_version" : "5.0.307.1",
   "browser_action": {
-    "default_icon": "icon2.png"
+    "default_icon": "icon2.png",
+    "default_popup": "popup1.html"
   },
   "permissions": [
     "http://*.stackoverflow.com/",

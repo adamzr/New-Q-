@@ -57,7 +57,7 @@ function addToViewedQuestions(historyItems){
     }
   }
 }
-chrome.browserAction.onClicked.addListener(newTab);//when you click on the icon next to the omnibar open tabs for all new questions
+//chrome.browserAction.onClicked.addListener(newTab);//when you click on the icon next to the omnibar open tabs for all new questions
 
 var viewedQuestions;//question ids already notified of; maintained between API calls
 var viewedComments = new Array();//holds comment ids you've already seen; maintained between API calls
@@ -161,7 +161,7 @@ function getNewestQuestions(maxNotifications){
                 //we'll pass the information needed to the html notification in the query string
                 var notification = webkitNotifications.createHTMLNotification("notification.html?title=" + escape(v["title"].replace("&","and")) + "&url=" + escape(site["site_url"]) +"/questions/" + questionID + "&vote_count=" + String(Number(v["up_vote_count"]) + Number(v["down_vote_count"])) + "&answer_count=" + v["answer_count"] + "&view_count=" + v["view_count"] + "&tags=" + escape(JSON.stringify(v.tags)) + "&logo_url=" + escape(site.logo_url));
                 if(k === 0) urls = new Array();//if the first returned question (i.e. key in question array is 0) is new to us then reset the list of new tabs to beopened
-                urls.push(site["site_url"] +"/questions/" + questionID);
+                urls.push({"url" : site["site_url"] +"/questions/" + questionID, "title" : v.title});
                 if(notificationsShown < maxNotifications) notification.show();
                 notificationsShown += 1;
                 viewedQuestions.push( "" + questionID);//add to to the list of questions we've already been notified of
@@ -193,14 +193,30 @@ function getNewestComments(maxNotifications){
                 }
             });
         });
+        
+        $.getJSON(site["api_endpoint"] + "/" +API_VERSION + "/users/" + userID, 
+        {"key": API_KEY},
+        function(data){chrome.browserAction.setBadgeText({"text": "" + data.users[0].reputation});});
+        
     }
 }
 
 getNewestQuestions(1);//run immediatly
 getNewestComments(1);
-setInterval( function(){getNewestQuestions(3)},ITERATION_INTERVAL);//run every minute or so
-setInterval( function(){getNewestComments(3)},ITERATION_INTERVAL + 19000);//run every minute and 20 seconds to avoid running at the same time as questions finder
-    
+
+var intervals = [];
+function go(){
+    intervals.push(setInterval( function(){getNewestQuestions(3)},ITERATION_INTERVAL));//run every minute or so
+    intervals.push(setInterval( function(){getNewestComments(3)},ITERATION_INTERVAL + 19000));//run every minute and 20 seconds to avoid running at the same time as questions finder
+}
+
+go();
+
+function stop(){
+    while(intervals.length > 0){
+        clearInterval(intervals.pop());
+    }
+}
  //]]>
 </script>
 </body>
