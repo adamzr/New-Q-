@@ -177,11 +177,11 @@
         //Now starts the real code:
         var qs = new Querystring();
         function loadMe(){        
-            title = unescape(qs.get("title"));
+            title = decodeURIComponent(qs.get("title"));
             if(!title) title = "(Unknown Title)"
             document.getElementById('link').innerHTML = title;
             
-            url = unescape(qs.get("url"));
+            url = decodeURIComponent(qs.get("url"));
             if(!url) url = "http://stackoverflow.com/404";
             document.getElementById('link').href = url;
             
@@ -200,7 +200,7 @@
             if(Number(qs.get("answer_count")) < 1) document.getElementById('status').className += " unanswered";
             else document.getElementById('status').className += " answered";
             
-            tags = JSON.parse(unescape(qs.get("tags")));
+            tags = JSON.parse(decodeURIComponent(qs.get("tags")));
             for(var i = 0; i < tags.length; i++){
                 var tag = $("<a></a>");
                 tag.attr("class", "post-tag");
@@ -209,7 +209,7 @@
                 $('#tags').append(tag);
             }
             var img = $("<img></img>");
-            img.attr("src", unescape(qs.get("logo_url")));
+            img.attr("src", decodeURIComponent(qs.get("logo_url")));
             img.css("position", "absolute");
             img.css("top", "10px");
             img.css("opacity", "0.1");

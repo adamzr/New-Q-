@@ -159,7 +159,7 @@ function getNewestQuestions(maxNotifications){
             
             if($.inArray("" + questionID,viewedQuestions) === -1 && !hasIgnoredTags){//if we haven't seen it yet and it has the right tags and none of the ignored ones
                 //we'll pass the information needed to the html notification in the query string
-                var notification = webkitNotifications.createHTMLNotification("notification.html?title=" + escape(v["title"].replace("&","and")) + "&url=" + escape(site["site_url"]) +"/questions/" + questionID + "&vote_count=" + String(Number(v["up_vote_count"]) + Number(v["down_vote_count"])) + "&answer_count=" + v["answer_count"] + "&view_count=" + v["view_count"] + "&tags=" + escape(JSON.stringify(v.tags)) + "&logo_url=" + escape(site.logo_url));
+                var notification = webkitNotifications.createHTMLNotification("notification.html?title=" + encodeURIComponent(v["title"].replace("&","and")) + "&url=" + encodeURIComponent(site["site_url"]) +"/questions/" + questionID + "&vote_count=" + String(Number(v["up_vote_count"]) + Number(v["down_vote_count"])) + "&answer_count=" + v["answer_count"] + "&view_count=" + v["view_count"] + "&tags=" + encodeURIComponent(JSON.stringify(v.tags)) + "&logo_url=" + encodeURIComponent(site.logo_url));
                 if(k === 0) urls = new Array();//if the first returned question (i.e. key in question array is 0) is new to us then reset the list of new tabs to beopened
                 urls.push({"url" : site["site_url"] +"/questions/" + questionID, "title" : v.title});
                 if(notificationsShown < maxNotifications) notification.show();
@@ -185,7 +185,7 @@ function getNewestComments(maxNotifications){
                 
                 var commentID = comment["comment_id"];
                 if($.inArray(commentID, viewedComments) === -1){
-                    var notification = webkitNotifications.createHTMLNotification("comment_notification.html?sender=" + escape(comment["owner"]["display_name"]) + "&url=" + site["site_url"] +"/questions/" + comment["post_id"] + "&body=" + escape(comment["body"]));
+                    var notification = webkitNotifications.createHTMLNotification("comment_notification.html?sender=" + encodeURIComponent(comment["owner"]["display_name"]) + "&url=" + site["site_url"] +"/questions/" + comment["post_id"] + "&body=" + encodeURIComponent(comment["body"]));
                     if(notificationsShown < maxNotifications) notification.show();
                     notificationsShown += 1
                     viewedComments.push(commentID);
