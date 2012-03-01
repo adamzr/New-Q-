@@ -12,7 +12,7 @@
             }
             .stats {
                 background:none repeat scroll 0 0 #EEEEEE;
-                margin:0 0 0 7px;
+                margin:1px 0 0 7px;
                 padding:4px 7px 6px;
                 width:58px;
             }
@@ -107,6 +107,16 @@
                 background: transparent;
                 z-index: 100;
             }
+
+			#site_img {
+				position: absolute;
+		        top: 10px;
+		        opacity: 0.1;
+		        margin-left: 10px;
+		        width: 60%;
+		        height: 50%;
+		        z-index: 1;
+			}
         </style> 
     </head> 
 <body onload="loadMe()"> 
@@ -126,7 +136,8 @@
             </div>
             <div class="views" title="views" id="view_count"></div>
         </div>
-     
+
+		<img id="site_img" />
 
         <strong><a style="z-index: 105; position: relative;" href="http://stackoverflow.com/404" target="_blank" id="link" onclick="window.close(); return true;">(Unknown Title)</a></strong>
         <div id="tags" class="tags"></div>
@@ -152,7 +163,7 @@
             var args = qs.split('&'); // parse out name/value pairs separated via &
     
             // split out each name=value pair
-            for (var i = 0; i < args.length; i++) {
+            for (var i in args) {
                 var pair = args[i].split('=');
                 var name = decodeURIComponent(pair[0]);
         
@@ -175,11 +186,12 @@
         }
             
         //Now starts the real code:
+		var TTL = 10000;//milliseconds until notification closes itself
         var qs = new Querystring();
         function loadMe(){        
             title = decodeURIComponent(qs.get("title"));
             if(!title) title = "(Unknown Title)"
-            document.getElementById('link').innerHTML = title;
+            $('#link').html(title);
             
             url = decodeURIComponent(qs.get("url"));
             if(!url) url = "http://stackoverflow.com/404";
@@ -201,25 +213,20 @@
             else document.getElementById('status').className += " answered";
             
             tags = JSON.parse(decodeURIComponent(qs.get("tags")));
-            for(var i = 0; i < tags.length; i++){
+            for(var i in tags){
                 var tag = $("<a></a>");
                 tag.attr("class", "post-tag");
                 tag.attr("rel", "tag");
                 tag.text(tags[i]);
                 $('#tags').append(tag);
             }
-            var img = $("<img></img>");
-            img.attr("src", decodeURIComponent(qs.get("logo_url")));
-            img.css("position", "absolute");
-            img.css("top", "10px");
-            img.css("opacity", "0.1");
-            img.css("margin-left", "90px");
-            img.css("width", "60%");
-            img.css("height", "50%");
-            img.css("z-index", "1");
-            $('body').append(img);
+            $("#site_img").attr("src", decodeURIComponent(qs.get("logo_url")));
+            
         }
-
+		
+		setTimeout(function() {
+		    window.close();
+		}, TTL);
         </script>
  
 </body> 
