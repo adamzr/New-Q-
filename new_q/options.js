@@ -11,9 +11,13 @@ function Profile(tags, anyTags, site, ignoredTags) {
 function ProfilesViewModel() {
     var self = this;
 
-	self.token = ko.observable("")
+	self.token = ko.observable("");
 
-    self.sites = ko.observableArray([]);    
+    self.sites = ko.observableArray([]);
+
+    self.badgeSite = ko.observable("");
+
+    self.autoclose = ko.observable(true);
 
     // Editable data
     self.profiles = ko.observableArray([
@@ -48,7 +52,7 @@ function restoreOptions() {
 		json = localStorage.viewModel;
 	}
 	else{
-		json='{"token":"","sites":[{"name":"Stack Overflow","logo_url":"http://sstatic.net/stackoverflow/img/logo.png","api_site_parameter":"stackoverflow","site_url":"http://stackoverflow.com","icon_url":"http://sstatic.net/stackoverflow/img/apple-touch-icon.png","favicon_url":"http://sstatic.net/stackoverflow/img/favicon.ico"}],"profiles":[]}'
+		json='{"token":"","badgeSite":"", "autoclose": true, "sites":[{"name":"Stack Overflow","logo_url":"http://sstatic.net/stackoverflow/img/logo.png","api_site_parameter":"stackoverflow","site_url":"http://stackoverflow.com","icon_url":"http://sstatic.net/stackoverflow/img/apple-touch-icon.png","favicon_url":"http://sstatic.net/stackoverflow/img/favicon.ico"}],"profiles":[]}'
 	}
 	
 	viewModel = ko.mapping.fromJSON(json);

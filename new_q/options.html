@@ -47,7 +47,7 @@
 		    <tbody data-bind="foreach: profiles">
 		    	<tr>
 					<td><select data-bind="options: $root.sites, value: site, optionsText: 'name', optionsCaption: 'Choose a site...', optionsValue: 'name'"></select></td>
-			        <td><input data-bind="value: tags" /></td>
+			        <td><input data-bind="value: tags" placeholder="Enter tags separated by spaces"/></td>
 					<td>
 						<select data-bind="value: anyTags">
 							<option value="true">Any</option>
@@ -64,7 +64,14 @@
 		    </tbody>
 		</table>
 		
-		<a data-bind="click: addProfile" class="btn btn-primary" id="add_row"><i class="icon-plus-sign icon-white"></i> Add A Search Profile</a>
+		<a data-bind="click: addProfile" class="btn btn-primary" id="add_row" style="margin-bottom: 20px;"><i class="icon-plus-sign icon-white"></i> Add A Search Profile</a>
+		
+		<label for="badgeSite">Choose which site to show your reputation score for. The score will show on the New Q! button next to the Omnibar. Your StackExchange account must be connected for your reputation to show.</label>
+		<select id="badgeSite" name="badgeSite" data-bind="options: $root.sites, value: badgeSite, optionsText: 'name', optionsCaption: 'Choose a site...', optionsValue: 'name'"></select>
+		
+		<label for="autoclose">Automatically dismiss notifications after a few seconds.</label>
+		<input id="autoclose" name="autoclose" type="checkbox" data-bind="checked: autoclose" />
+		
 		<a data-bind="click: saveOptions" class="btn btn-success pull-right" href="#"><i class="icon-ok-sign icon-white"></i> Save</a>
 
 		<p style="margin-top: 15px;">To get inbox notifications. You must connect your StackExchange account</p>

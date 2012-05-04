@@ -58,7 +58,9 @@ function loadData(){
 		APP.viewModel = {
 		   "token":"",
 		   "sites":[],
-		   "profiles":[]
+		   "profiles":[],
+		   "badgeSite" : "",
+		   "autoclose" : true
 		}
 	}
 }
@@ -162,7 +164,7 @@ function getNewestQuestions(profile){
 	"key" : APP.API_KEY,
     "sort" : "creation",
     "pagesize" : pageSize,
-    "fromdate" : profile.lastRun ? profile.lastRun : dayAgo,
+    "fromdate" : dayAgo,//profile.lastRun ? profile.lastRun : dayAgo,
     "tagged" : tags.split(' ').join(';')},
     function(data){
         if(data === null){
@@ -196,7 +198,7 @@ function getNewestQuestions(profile){
             if($.inArray("" + questionID, APP.viewedQuestions) === -1) {//if we haven't seen it yet display it
 				console.log("New Q! " + questionID);
                 //we'll pass the information needed to the html notification in the query string
-				var notificationURL = "notification.html?title=" + encodeURIComponent(v.title) + "&url=" + encodeURIComponent(v.link) + + "&vote_count=" + v.score + "&answer_count=" + v.answer_count + "&view_count=" + v.view_count + "&tags=" + encodeURIComponent(JSON.stringify(v.tags)) + "&logo_url=" + encodeURIComponent(getSite(site).logo_url);
+				var notificationURL = "notification.html?title=" + encodeURIComponent(v.title) + "&url=" + encodeURIComponent(v.link) + + "&vote_count=" + v.score + "&answer_count=" + v.answer_count + "&view_count=" + v.view_count + "&tags=" + encodeURIComponent(JSON.stringify(v.tags)) + "&logo_url=" + encodeURIComponent(getSite(site).logo_url) + "&autoclose=" + APP.viewModel.autoclose;
                 var notification = webkitNotifications.createHTMLNotification(notificationURL);
 				console.log("Notification URL: " + notificationURL);
                 APP.questions.push({"question" : v, "site" : getSite(site)});
@@ -268,7 +270,7 @@ function getUnreadInbox(){
             if($.inArray(itemHash, APP.viewedInboxItems) === -1){//if we haven't seen it yet and it has the right tags and none of the ignored ones
                 //we'll pass the information needed to the html notification in the query string
 				var notificationTemplate = (v.item_type === "careers_message" ? "careerNotification.html" : "inboxNotification.html");
-                var notificationURL = notificationTemplate + "?title=" + encodeURIComponent(v.title) + "&url=" + encodeURIComponent(v.link) + "&logo_url=" + encodeURIComponent(v.site.favicon_url) + "&site_name=" + encodeURIComponent(v.site.name) + "&body=" + encodeURIComponent(v.body) + "&type=" + encodeURIComponent(v.item_type);
+                var notificationURL = notificationTemplate + "?title=" + encodeURIComponent(v.title) + "&url=" + encodeURIComponent(v.link) + "&logo_url=" + encodeURIComponent(v.site.favicon_url) + "&site_name=" + encodeURIComponent(v.site.name) + "&body=" + encodeURIComponent(v.body) + "&type=" + encodeURIComponent(v.item_type) + "&autoclose=" + APP.viewModel.autoclose;
                 var notification = webkitNotifications.createHTMLNotification(notificationURL);
 				console.log("Notification URL: " + notificationURL);
  
@@ -288,10 +290,41 @@ function getUnreadInbox(){
     
 }
 
+function getLatestReputationScore(){
+	console.log("Getting latest reputation score...");
+	if(!APP.viewModel.token){
+		console.log("No token");
+		return;
+	}
+	var repFilter = "!R04ewk2";
+	if(APP.viewModel && APP.viewModel.badgeSite){
+		$.getJSON(APP.API_URL + "/" + APP.API_VERSION +"/" + "me" ,
+	    {
+		"key" : APP.API_KEY,
+		"filter" : repFilter,
+		"site" : getSite(APP.viewModel.badgeSite).api_site_parameter
+		},
+		function(data){
+			if(data.items && data.items[0].reputation){
+				var score = parseInt(data.items[0].reputation, 10);
+				var rep = "" + score;
+				if(score > 9999){
+					score = score / 1000.0;
+					rep = ("" + score).substring(0, 4) + "k";
+				}
+				chrome.browserAction.setBadgeText({"text": rep});
+			}
+		});
+	} else {
+		console.log("No site selected for reputation count.")
+	}
+}
+
 $.each(APP.viewModel.profiles, function(key, profile){
 	getNewestQuestions(profile);
 });
 getUnreadInbox();
+getLatestReputationScore();
 
 APP.intervals = [];
 function getIntervals(){
@@ -300,8 +333,9 @@ function getIntervals(){
 
 function go(){
 	console.log("Starting...");
-	APP.intervals.push(setInterval( function(){getNewQuestionsForAllProfiles()},APP.ITERATION_INTERVAL));
-	APP.intervals.push(setInterval( function(){getUnreadInbox()},APP.ITERATION_INTERVAL));
+	APP.intervals.push(setInterval( function(){getNewQuestionsForAllProfiles()}, APP.ITERATION_INTERVAL));
+	APP.intervals.push(setInterval( function(){getUnreadInbox()}, APP.ITERATION_INTERVAL));
+	setInterval( function(){getLatestReputationScore()}, APP.ITERATION_INTERVAL);//Never stop updating rep badge
 }
 
 go();

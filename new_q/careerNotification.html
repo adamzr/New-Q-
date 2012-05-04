@@ -139,9 +139,11 @@
 		return true;
 	});
         
-	setTimeout(function() {
-			    window.close();
-			}, TTL);
+	if(qs.get("autoclose") === "true"){
+		setTimeout(function() {
+		    window.close();
+		}, TTL);
+	}
 	</script>
 </body>
 </html>
