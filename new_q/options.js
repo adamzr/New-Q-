@@ -57,6 +57,14 @@ function restoreOptions() {
 	
 	viewModel = ko.mapping.fromJSON(json);
 	
+	// Upgrade code
+	if(!viewModel.autoclose){
+		viewModel.autoclose = ko.observable(true);		
+	}
+	if(!viewModel.badgeSite){
+		viewModel.badgeSite = ko.observable("");
+	}
+	
 	viewModel.addProfile = function(){
 		viewModel.profiles.push(new Profile("",true,this.sites()[0],""));
 	}
